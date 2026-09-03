@@ -1,55 +1,50 @@
 name: CI
 
 on:
-push:
-pull_request:
+  push:
+  pull_request:
 
 jobs:
-validate:
-name: Validate
-runs-on: ubuntu-latest
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
 
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-steps:
-  - name: Checkout repository
-    uses: actions/checkout@v4
+      - name: Make scripts executable
+        run: chmod +x app/*.sh scripts/*.sh tests/*.sh
 
-  - name: Make scripts executable
-    run: chmod +x app/*.sh scripts/*.sh tests/*.sh
+      - name: Run linting
+        run: ./scripts/lint.sh
 
-  - name: Run linting
-    run: ./scripts/lint.sh
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: validate
 
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-test:
-name: Test
-runs-on: ubuntu-latest
-needs: validate
+      - name: Make scripts executable
+        run: chmod +x app/*.sh tests/*.sh
 
+      - name: Run application tests
+        run: ./tests/test.sh
 
-steps:
-  - name: Checkout repository
-    uses: actions/checkout@v4
+  docker:
+    name: Docker Build and Smoke Tests
+    runs-on: ubuntu-latest
+    needs: test
 
-  - name: Make scripts executable
-    run: chmod +x app/*.sh tests/*.sh
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  - name: Run application tests
-    run: ./tests/test.sh
+      - name: Make build script executable
+        run: chmod +x scripts/build.sh
 
-docker:
-name: Docker Build and Smoke Tests
-runs-on: ubuntu-latest
-needs: test
-
-
-steps:
-  - name: Checkout repository
-    uses: actions/checkout@v4
-
-  - name: Make build script executable
-    run: chmod +x scripts/build.sh
-
-  - name: Build Docker image and run smoke tests
-    run: ./scripts/build.sh
-
+      - name: Build Docker image and run smoke tests
+        run: ./scripts/build.sh
